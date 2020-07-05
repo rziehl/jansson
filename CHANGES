@@ -1,3 +1,101 @@
+Version 2.13.1
+==============
+
+Released 2020-05-07
+
+* Build:
+
+  - Include `jansson_version_str()` and `jansson_version_cmp()` in
+    shared library. (#534)
+
+  - Include `scripts/` in tarball. (#535)
+
+
+Version 2.13
+============
+
+Released 2020-05-05
+
+* New Features:
+
+  - Add `jansson_version_str()` and `jansson_version_cmp()` for runtime
+    version checking (#465).
+
+  - Add `json_object_update_new()`, `json_object_update_existing_new()`
+    and `json_object_update_missing_new()` functions (#499).
+
+  - Add `json_object_update_recursive()` (#505).
+
+* Build:
+
+  - Add ``-Wno-format-truncation`` to suppress format truncation warnings (#489).
+
+* Bug fixes:
+
+  - Remove ``strtod`` macro definition for MinGW (#498).
+
+  - Add infinite loop check in `json_deep_copy()` (#490).
+
+  - Add ``pipe`` macro definition for MinGW (#500).
+
+  - Enhance ``JANSSON_ATTRS`` macro to support earlier C standard(C89) (#501).
+
+  - Update version detection for sphinx-build (#502).
+
+* Documentation:
+
+  - Fix typos (#483, #494).
+
+  - Document that call the custom free function to free the return value 
+    of `json_dumps()` if you have a custom malloc/free (#490).
+
+  - Add vcpkg installation instructions (#496).
+
+  - Document that non-blocking file descriptor is not supported on
+    `json_loadfd()` (#503).
+
+
+Version 2.12
+============
+
+Released 2018-11-26
+
+* Bug fixes:
+
+  - Fix error message in `json_pack()` for NULL object (#409).
+
+  - Avoid invalid memory read in `json_pack()` (#421).
+
+  - Call va_end after va_copy in `json_vsprintf()` (#427).
+
+  - Improve handling of formats with '?' and '*' in `json_pack()` (#438).
+
+  - Remove inappropriate `jsonp_free()` which caused segmentation fault in
+    error handling (#444).
+
+* Build:
+
+  - Add function attributes for GCC and CLANG to provide warnings on improper
+    use of jansson routines (#404).
+
+  - Many CMake fixes (#408, #412, #415).
+
+  - Enable -Bsymbolic-functions linker flag whenever possible.
+
+  - Resolve various compiler warnings (#423, #430, #435, #436).
+
+  - Fix code coverage ignored paths (#439).
+
+* Other:
+
+  - Test coverage improvements (#398, #400).
+
+  - Add VS 2017 to appveyor, update Visual Studio documentation (#417).
+
+  - Update copyright for 2018 (#424).
+
+  - Update install instructions in README (#401).
+
 Version 2.11
 ============
 

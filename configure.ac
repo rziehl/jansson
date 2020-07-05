@@ -1,5 +1,5 @@
 AC_PREREQ([2.60])
-AC_INIT([jansson], [2.11], [petri@digip.org])
+AC_INIT([jansson], [2.13.1], [https://github.com/akheron/jansson/issues])
 
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE([1.10 foreign])
@@ -9,6 +9,7 @@ AC_CONFIG_HEADERS([jansson_private_config.h])
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_LIBTOOL
 AM_CONDITIONAL([GCC], [test x$GCC = xyes])
 
@@ -107,8 +108,57 @@ AC_ARG_ENABLE([initial-hashtable-order],
 AC_DEFINE_UNQUOTED([INITIAL_HASHTABLE_ORDER], [$initial_hashtable_order],
   [Number of buckets new object hashtables contain is 2 raised to this power. E.g. 3 -> 2^3 = 8.])
 
+AC_ARG_ENABLE([Bsymbolic],
+  [AS_HELP_STRING([--disable-Bsymbolic],
+    [Avoid linking with -Bsymbolic-function])],
+  [], [with_Bsymbolic=check])
+
+if test "x$with_Bsymbolic" != "xno" ; then
+    AC_MSG_CHECKING([for -Bsymbolic-functions linker flag])
+    saved_LDFLAGS="${LDFLAGS}"
+    LDFLAGS=-Wl,-Bsymbolic-functions
+    AC_TRY_LINK(
+      [], [int main (void) { return 0; }],
+      [AC_MSG_RESULT([yes])
+       have_Bsymbolic=yes],
+      [AC_MSG_RESULT([no])
+       have_Bsymbolic=no]
+    )
+    LDFLAGS="${saved_LDFLAGS}"
+
+    if test "x$with_Bsymbolic" = "xcheck" ; then
+        with_Bsymbolic=$have_Bsymbolic;
+    fi
+    if test "x$with_Bsymbolic:x$have_Bsymbolic" = "xyes:xno" ; then
+        AC_MSG_ERROR([linker support is required for -Bsymbolic])
+    fi
+fi
+
+AS_IF([test "x$with_Bsymbolic" = "xyes"], [JSON_BSYMBOLIC_LDFLAGS=-Wl[,]-Bsymbolic-functions])
+AC_SUBST(JSON_BSYMBOLIC_LDFLAGS)
+
+
+AC_ARG_ENABLE([ossfuzzers],
+  [AS_HELP_STRING([--enable-ossfuzzers],
+    [Whether to generate the fuzzers for OSS-Fuzz])],
+  [have_ossfuzzers=yes], [have_ossfuzzers=no])
+AM_CONDITIONAL([USE_OSSFUZZERS], [test "x$have_ossfuzzers" = "xyes"])
+
+
+AC_SUBST([LIB_FUZZING_ENGINE])
+AM_CONDITIONAL([USE_OSSFUZZ_FLAG], [test "x$LIB_FUZZING_ENGINE" = "x-fsanitize=fuzzer"])
+AM_CONDITIONAL([USE_OSSFUZZ_STATIC], [test -f "$LIB_FUZZING_ENGINE"])
+
+
 if test x$GCC = xyes; then
-    AM_CFLAGS="-Wall -Wextra -Wdeclaration-after-statement"
+    AC_MSG_CHECKING(for -Wno-format-truncation)
+    wnoformat_truncation="-Wno-format-truncation"
+    AS_IF([${CC} -Wno-format-truncation -Werror -S -o /dev/null -xc /dev/null > /dev/null 2>&1],
+      [AC_MSG_RESULT(yes)],
+      [AC_MSG_RESULT(no)
+      wnoformat_truncation=""])
+
+    AM_CFLAGS="-Wall -Wextra -Wdeclaration-after-statement -Wshadow ${wnoformat_truncation}"
 fi
 AC_SUBST([AM_CFLAGS])
 
@@ -120,6 +170,7 @@ AC_CONFIG_FILES([
         src/jansson_config.h
         test/Makefile
         test/bin/Makefile
+        test/ossfuzz/Makefile
         test/suites/Makefile
         test/suites/api/Makefile
 ])

@@ -1,7 +1,7 @@
 # Notes:
 #
 # Author: Paul Harris, June 2012
-# Additions: Joakim Soderberg, Febuary 2013
+# Additions: Joakim Soderberg, February 2013
 #
 # Supports: building static/shared, release/debug/etc, can also build html docs
 # and some of the tests.
@@ -35,7 +35,7 @@
 # >> make test (to run the tests, if you enabled them)
 #
 # Brief description on how it works:
-# There is a small heirachy of CMakeLists.txt files which define how the
+# There is a small hierarchy of CMakeLists.txt files which define how the
 # project is built.
 # Header file detection etc is done, and the results are written into config.h
 # and jansson_config.h, which are generated from the corresponding
@@ -46,9 +46,8 @@
 
 
 
-cmake_minimum_required (VERSION 2.8)
-# required for exports? cmake_minimum_required (VERSION 2.8.6)
-project (jansson C)
+cmake_minimum_required (VERSION 3.1)
+project(jansson C)
 
 # Options
 option(JANSSON_BUILD_SHARED_LIBS "Build shared libraries." OFF)
@@ -70,26 +69,26 @@ if (UNIX)
 endif ()
 
 # Set some nicer output dirs.
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-set(JANSSON_TEMP_DIR ${PROJECT_BINARY_DIR}/tmp)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
+set(JANSSON_TEMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp)
 
 # Give the debug version a different postfix for windows,
 # so both the debug and release version can be built in the
 # same build-tree on Windows (MSVC).
-if (WIN32)
+if (WIN32 AND NOT CMAKE_DEBUG_POSTFIX)
    set(CMAKE_DEBUG_POSTFIX "_d")
-endif (WIN32)
+endif()
 
 # This is how I thought it should go
 # set (JANSSON_VERSION "2.3.1")
 # set (JANSSON_SOVERSION 2)
 
-set(JANSSON_DISPLAY_VERSION "2.11")
+set(JANSSON_DISPLAY_VERSION "2.13.1")
 
 # This is what is required to match the same numbers as automake's
-set(JANSSON_VERSION "4.11.0")
+set(JANSSON_VERSION "4.13.0")
 set(JANSSON_SOVERSION 4)
 
 # for CheckFunctionKeywords
@@ -101,19 +100,21 @@ include (CheckFunctionKeywords)
 include (CheckIncludeFiles)
 include (CheckTypeSize)
 
+# suppress format-truncation warning
+include (CheckCCompilerFlag)
+check_c_compiler_flag(-Wno-format-truncation HAS_NO_FORMAT_TRUNCATION)
+if (HAS_NO_FORMAT_TRUNCATION)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-format-truncation")
+endif()
+
 if (MSVC)
    # Turn off Microsofts "security" warnings.
    add_definitions( "/W3 /D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4996 /nologo" )
-   
+
    if (JANSSON_STATIC_CRT)
       set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
       set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
    endif()
-   
-endif()
-
-if (NOT WIN32 AND (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX))
-   add_definitions("-fPIC")
 endif()
 
 message("C compiler: ${CMAKE_C_COMPILER_ID}")
@@ -164,9 +165,9 @@ if (HAVE_INT32_T)
    set (JSON_INT32 int32_t)
 elseif (HAVE___INT32)
    set (JSON_INT32 __int32)
-elseif (HAVE_LONG_INT AND (${LONG_INT} EQUAL 4))
+elseif (HAVE_LONG_INT AND (LONG_INT EQUAL 4))
    set (JSON_INT32 long)
-elseif (HAVE_INT AND (${INT} EQUAL 4))
+elseif (HAVE_INT AND (INT EQUAL 4))
    set (JSON_INT32 int)
 else ()
    message (FATAL_ERROR "Could not detect a valid 32-bit integer type")
@@ -182,12 +183,12 @@ if (HAVE_UINT32_T)
    set (JSON_UINT32 uint32_t)
 elseif (HAVE___UINT32)
    set (JSON_UINT32 __uint32)
-elseif (HAVE_UNSIGNED_LONG_INT AND (${UNSIGNED_LONG_INT} EQUAL 4))
+elseif (HAVE_UNSIGNED_LONG_INT AND (UNSIGNED_LONG_INT EQUAL 4))
    set (JSON_UINT32 "unsigned long")
-elseif (HAVE_UNSIGNED_INT AND (${UNSIGNED_INT} EQUAL 4))
+elseif (HAVE_UNSIGNED_INT AND (UNSIGNED_INT EQUAL 4))
    set (JSON_UINT32 "unsigned int")
 else ()
-   message (FATAL_ERROR "Could not detect a valid unsigned 32-bit integer type")
+      message (FATAL_ERROR "Could not detect a valid unsigned 32-bit integer type")
 endif ()
 
 check_type_size (uint16_t UINT16_T)
@@ -196,12 +197,12 @@ if (HAVE_UINT16_T)
    set (JSON_UINT16 uint16_t)
 elseif (HAVE___UINT16)
    set (JSON_UINT16 __uint16)
-elseif (HAVE_UNSIGNED_INT AND (${UNSIGNED_INT} EQUAL 2))
+elseif (HAVE_UNSIGNED_INT AND (UNSIGNED_INT EQUAL 2))
    set (JSON_UINT16 "unsigned int")
-elseif (HAVE_UNSIGNED_SHORT AND (${UNSIGNED_SHORT} EQUAL 2))
+elseif (HAVE_UNSIGNED_SHORT AND (UNSIGNED_SHORT EQUAL 2))
    set (JSON_UINT16 "unsigned short")
 else ()
-   message (FATAL_ERROR "Could not detect a valid unsigned 16-bit integer type")
+      message (FATAL_ERROR "Could not detect a valid unsigned 16-bit integer type")
 endif ()
 
 check_type_size (uint8_t UINT8_T)
@@ -214,7 +215,7 @@ else ()
    set (JSON_UINT8 "unsigned char")
 endif ()
 
-# Check for ssize_t and SSIZE_T existance.
+# Check for ssize_t and SSIZE_T existence.
 check_type_size(ssize_t SSIZE_T)
 check_type_size(SSIZE_T UPPERCASE_SSIZE_T)
 if(NOT HAVE_SSIZE_T)
@@ -250,7 +251,7 @@ endif ()
 # detect what to use for the 64 bit type.
 # Note: I will prefer long long if I can get it, as that is what the automake system aimed for.
 if (NOT DEFINED JSON_INT_T)
-   if (HAVE_LONG_LONG_INT AND (${LONG_LONG_INT} EQUAL 8))
+   if (HAVE_LONG_LONG_INT AND (LONG_LONG_INT EQUAL 8))
       set (JSON_INT_T "long long")
    elseif (HAVE_INT64_T)
       set (JSON_INT_T int64_t)
@@ -350,7 +351,7 @@ set(JANSSON_HDR_PRIVATE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/utf.h
    ${CMAKE_CURRENT_BINARY_DIR}/private_include/jansson_private_config.h)
 
-set(JANSSON_HDR_PUBLIC 
+set(JANSSON_HDR_PUBLIC
    ${CMAKE_CURRENT_BINARY_DIR}/include/jansson_config.h
    ${CMAKE_CURRENT_SOURCE_DIR}/src/jansson.h)
 
@@ -359,24 +360,26 @@ source_group("Library Private Headers" FILES ${JANSSON_HDR_PRIVATE})
 source_group("Library Public Headers" FILES ${JANSSON_HDR_PUBLIC})
 
 if(JANSSON_BUILD_SHARED_LIBS)
-   add_library(jansson SHARED 
-      ${JANSSON_SRC} 
-      ${JANSSON_HDR_PRIVATE} 
-      ${JANSSON_HDR_PUBLIC} 
+   add_library(jansson SHARED
+      ${JANSSON_SRC}
+      ${JANSSON_HDR_PRIVATE}
+      ${JANSSON_HDR_PUBLIC}
       src/jansson.def)
 
    set_target_properties(jansson PROPERTIES
       VERSION ${JANSSON_VERSION}
       SOVERSION ${JANSSON_SOVERSION})
 else()
-   add_library(jansson 
+   add_library(jansson STATIC
       ${JANSSON_SRC}
-      ${JANSSON_HDR_PRIVATE} 
+      ${JANSSON_HDR_PRIVATE}
       ${JANSSON_HDR_PUBLIC})
+   set_target_properties(jansson PROPERTIES
+      POSITION_INDEPENDENT_CODE true)
 endif()
 
 if (JANSSON_EXAMPLES)
-	add_executable(simple_parse "${PROJECT_SOURCE_DIR}/examples/simple_parse.c")
+	add_executable(simple_parse "${CMAKE_CURRENT_SOURCE_DIR}/examples/simple_parse.c")
 	target_link_libraries(simple_parse jansson)
 endif()
 
@@ -386,12 +389,12 @@ if (JANSSON_BUILD_DOCS)
    find_package(Sphinx)
 
    if (NOT SPHINX_FOUND)
-      message(WARNING "Sphinx not found. Cannot generate documentation! 
+      message(WARNING "Sphinx not found. Cannot generate documentation!
       Set -DJANSSON_BUILD_DOCS=OFF to get rid of this message.")
    else()
       if (Sphinx_VERSION_STRING VERSION_LESS 1.0)
-         message(WARNING "Your Sphinx version is too old! 
-               This project requires Sphinx v1.0 or above to produce 
+         message(WARNING "Your Sphinx version is too old!
+               This project requires Sphinx v1.0 or above to produce
                proper documentation (you have v${Sphinx_VERSION_STRING}).
                You will get output but it will have errors.")
       endif()
@@ -444,7 +447,7 @@ if (JANSSON_BUILD_DOCS)
             list(APPEND DOC_TARGETS latex)
          endif()
       endif()
-      
+
       # The doc target will build all documentation targets.
       add_custom_target(doc)
 
@@ -528,7 +531,7 @@ if (NOT JANSSON_WITHOUT_TESTS)
 
    # Create executables and tests/valgrind tests for API tests.
    foreach (test ${api_tests})
-      build_testprog(${test} ${PROJECT_SOURCE_DIR}/test/suites/api)
+      build_testprog(${test} ${CMAKE_CURRENT_SOURCE_DIR}/test/suites/api)
 
       if (JANSSON_TEST_WITH_VALGRIND)
          add_test(memcheck__${test}
@@ -542,12 +545,12 @@ if (NOT JANSSON_WITHOUT_TESTS)
    endforeach ()
 
    # Test harness for the suites tests.
-   build_testprog(json_process ${PROJECT_SOURCE_DIR}/test/bin)
+   build_testprog(json_process ${CMAKE_CURRENT_SOURCE_DIR}/test/bin)
 
    set(SUITE_TEST_CMD ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/json_process)
    set(SUITES encoding-flags valid invalid invalid-unicode)
    foreach (SUITE ${SUITES})
-       file(GLOB TESTDIRS ${jansson_SOURCE_DIR}/test/suites/${SUITE}/*)
+       file(GLOB TESTDIRS test/suites/${SUITE}/*)
 
        foreach (TESTDIR ${TESTDIRS})
          if (IS_DIRECTORY ${TESTDIR})
@@ -589,7 +592,7 @@ if (NOT JANSSON_WITHOUT_TESTS)
 
    # Enable using "make check" just like the autotools project.
    # By default cmake creates a target "make test"
-   add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} 
+   add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
                      DEPENDS json_process ${api_tests})
 endif ()
 
@@ -621,80 +624,67 @@ set(VERSION     ${JANSSON_DISPLAY_VERSION})
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/jansson.pc.in
                ${CMAKE_CURRENT_BINARY_DIR}/jansson.pc @ONLY)
 
-# Make sure the paths are absolute.
+# Make sure the paths are relative.
 foreach(p LIB BIN INCLUDE CMAKE)
     set(var JANSSON_INSTALL_${p}_DIR)
-    if(NOT IS_ABSOLUTE "${${var}}")
-        set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
-    endif()
 endforeach()
 
-# Export targets (This is used for other CMake projects to easily find the libraries and include files).
-export(TARGETS jansson
-        FILE "${PROJECT_BINARY_DIR}/JanssonTargets.cmake")
-export(PACKAGE jansson)
-
 # Generate the config file for the build-tree.
-set(JANSSON__INCLUDE_DIRS 
-    "${PROJECT_SOURCE_DIR}/include"
-    "${PROJECT_BINARY_DIR}/include")
+set(JANSSON__INCLUDE_DIRS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_BINARY_DIR}/include")
 set(JANSSON_INCLUDE_DIRS ${JANSSON__INCLUDE_DIRS} CACHE PATH "Jansson include directories")
-configure_file(${PROJECT_SOURCE_DIR}/cmake/JanssonConfig.cmake.in
-                ${PROJECT_BINARY_DIR}/JanssonConfig.cmake 
-                @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/janssonConfig.cmake.in
+               ${CMAKE_CURRENT_BINARY_DIR}/janssonConfig.cmake
+               @ONLY)
+
 
 # Generate the config file for the installation tree.
-file(RELATIVE_PATH 
-    REL_INCLUDE_DIR 
-    "${JANSSON_INSTALL_CMAKE_DIR}"
-    "${JANSSON_INSTALL_INCLUDE_DIR}") # Calculate the relative directory from the Cmake dir.
+include(CMakePackageConfigHelpers)
 
-# Note the EVENT_CMAKE_DIR is defined in JanssonConfig.cmake.in, 
-# we escape it here so it's evaluated when it is included instead
-# so that the include dirs are given relative to where the 
-# config file is located.
-set(JANSSON__INCLUDE_DIRS 
-    "\${JANSSON_CMAKE_DIR}/${REL_INCLUDE_DIR}") 
-configure_file(${PROJECT_SOURCE_DIR}/cmake/JanssonConfig.cmake.in
-                ${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/JanssonConfig.cmake 
-                @ONLY)
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/cmake/janssonConfigVersion.cmake"
+  VERSION ${JANSSON_VERSION}
+  COMPATIBILITY ExactVersion
+)
 
-# Generate version info for both build-tree and install-tree.
-configure_file(${PROJECT_SOURCE_DIR}/cmake/JanssonConfigVersion.cmake.in
-                ${PROJECT_BINARY_DIR}/JanssonConfigVersion.cmake 
-                @ONLY)
-
-# Define the public headers.
-set_target_properties(jansson PROPERTIES PUBLIC_HEADER "${JANSSON_HDR_PUBLIC}")
-#TODO: fix this.
+configure_package_config_file(
+    "cmake/janssonConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake/janssonConfig.cmake"
+    INSTALL_DESTINATION "${JANSSON_INSTALL_CMAKE_DIR}"
+)
 
 #
 # Install targets.
 #
 option(JANSSON_INSTALL "Generate installation target" ON)
 if (JANSSON_INSTALL)
-install(TARGETS jansson
-        EXPORT JanssonTargets
-        LIBRARY DESTINATION "${JANSSON_INSTALL_LIB_DIR}" COMPONENT lib
-        ARCHIVE DESTINATION "${JANSSON_INSTALL_LIB_DIR}" COMPONENT lib
-        RUNTIME DESTINATION "${JANSSON_INSTALL_BIN_DIR}" COMPONENT lib # Windows DLLs
-        PUBLIC_HEADER DESTINATION "${JANSSON_INSTALL_INCLUDE_DIR}" COMPONENT dev)
+  install(TARGETS jansson
+          EXPORT janssonTargets
+          LIBRARY DESTINATION "lib"
+          ARCHIVE DESTINATION "lib"
+          RUNTIME DESTINATION "bin"
+          INCLUDES DESTINATION "include")
 
-# Install the pkg-config.
-install (FILES 
-         ${CMAKE_CURRENT_BINARY_DIR}/jansson.pc
-         DESTINATION ${JANSSON_INSTALL_LIB_DIR}/pkgconfig COMPONENT dev)
+  install(FILES ${JANSSON_HDR_PUBLIC}
+          DESTINATION "include")
 
-# Install the configs.
-install(FILES
-    ${PROJECT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/JanssonConfig.cmake
-    ${PROJECT_BINARY_DIR}/JanssonConfigVersion.cmake
-    DESTINATION "${JANSSON_INSTALL_CMAKE_DIR}" COMPONENT dev)
+  # Install the pkg-config.
+  install(FILES
+          ${CMAKE_CURRENT_BINARY_DIR}/jansson.pc
+          DESTINATION lib/pkgconfig)
 
-# Install exports for the install-tree.
-install(EXPORT JanssonTargets 
-        DESTINATION "${JANSSON_INSTALL_CMAKE_DIR}" COMPONENT dev)
+  # Install the configs.
+  install(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/cmake/janssonConfig.cmake
+      ${CMAKE_CURRENT_BINARY_DIR}/cmake/janssonConfigVersion.cmake
+      DESTINATION "${JANSSON_INSTALL_CMAKE_DIR}")
+
+  # Install exports for the install-tree.
+  install(EXPORT janssonTargets
+          NAMESPACE jansson::
+          DESTINATION "${JANSSON_INSTALL_CMAKE_DIR}")
 endif()
 
 # For use when simply using add_library from a parent project to build jansson.
-set(JANSSON_LIBRARIES jansson CACHE STRING "Jansson libraries")
+set(JANSSON_LIBRARIES jansson CACHE STRING "jansson libraries")
